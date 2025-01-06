@@ -1,7 +1,4 @@
 {
-    "NoPermissions": "You do not have permission to execute this command.",
-    "Enabled": "Plugin has been enabled.",
-    "Disabled": "Plugin has been disabled",
-    "Reloaded": "Plugin has been reloaded",
-    "FailedToReload": "Failed to reload plugin"
+  "Ads_Enabled": "You have just {lime}enabled {default}ads on our server, watch the chat :)",
+  "Ads_Disabled": "You have just {lightred}disabled {default}ads on our server, you will no longer see them!"
 }

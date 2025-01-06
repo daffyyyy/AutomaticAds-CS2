@@ -6,7 +6,7 @@ namespace AutomaticAds;
 public class BaseConfigs : BasePluginConfig
 {
     [JsonPropertyName("ChatPrefix")]
-    public string ChatPrefix { get; set; } = " [{GREEN}AutomaticAds{WHITE}]{WHITE}";
+    public string ChatPrefix { get; set; } = "[{GREEN}AutomaticAds{WHITE}]{WHITE}";
 
     [JsonPropertyName("PlaySoundName")]
     public string? PlaySoundName { get; set; } = "ui/panorama/popup_reveal_01";
@@ -16,7 +16,16 @@ public class BaseConfigs : BasePluginConfig
     
     [JsonPropertyName("GlobalInterval")]
     public int GlobalInterval { get; set; } = 160;
+    
+    [JsonPropertyName("DiscordUrl")]
+    public string DiscordUrl { get; set; } = "discord.utopiafps.pl";
+    
+    [JsonPropertyName("WebsiteUrl")]
+    public string WebsiteUrl { get; set; } = "utopiafps.pl";
 
+    [JsonPropertyName("FlagToDisable")]
+    public string FlagToDisable { get; set; } = "@css/svip";
+    
     [JsonPropertyName("UseWelcomeMessage")]
     public bool EnableWelcomeMessage { get; set; } = true;
 
