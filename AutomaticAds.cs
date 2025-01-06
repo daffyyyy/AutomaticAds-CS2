@@ -11,97 +11,89 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.7";
-    public override string ModuleAuthor => "luca.uy";
+    public override string ModuleVersion => "1.0.8a";
+    public override string ModuleAuthor => "luca.uy fork by daffyy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
-    private readonly Dictionary<BaseConfigs.AdConfig, DateTime> lastAdTimes = new();
-    private readonly List<CounterStrikeSharp.API.Modules.Timers.Timer> timers = new();
-    private CounterStrikeSharp.API.Modules.Timers.Timer? adTimer = null;
+    private readonly Dictionary<BaseConfigs.AdConfig, DateTime> _lastAdTimes = new();
+    private readonly List<CounterStrikeSharp.API.Modules.Timers.Timer> _timers = [];
+    private CounterStrikeSharp.API.Modules.Timers.Timer? _adTimer;
+    
+    private static readonly Random Random = new();
 
-    private int currentAdIndex = 0;
+    private int _currentAdIndex;
     private string _currentMap = "";
 
     public override void Load(bool hotReload)
     {
-        RegisterListener<Listeners.OnMapStart>(mapName =>
-        {
-            _currentMap = mapName;
-        });
-
         if (hotReload)
         {
-            _currentMap = Server.MapName;
+            OnMapStart(string.Empty);
         }
 
         RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
-
-        if (!string.IsNullOrWhiteSpace(Server.MapName))
-        {
-            OnMapStart(Server.MapName);
-        }
-
-        AddCommand("ads_disable", "Disables the AutomaticAds plugin.", (player, commandInfo) =>
-        {
-
-            if (player == null || commandInfo == null) return;
-            MessageColorFormatter formatter = new MessageColorFormatter();
-            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-
-            var permissionValidator = new RequiresPermissions("@css/root");
-            if (!permissionValidator.CanExecuteCommand(player))
-            {
-                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
-                return;
-            }
-
-            Server.ExecuteCommand("css_plugins unload AutomaticAds");
-            commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Disabled"]}");
-        });
-
-        AddCommand("ads_enable", "Enable the AutomaticAds plugin.", (player, commandInfo) =>
-        {
-
-            if (player == null || commandInfo == null) return;
-            MessageColorFormatter formatter = new MessageColorFormatter();
-            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-
-            var permissionValidator = new RequiresPermissions("@css/root");
-            if (!permissionValidator.CanExecuteCommand(player))
-            {
-                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
-                return;
-            }
-
-            Server.ExecuteCommand("css_plugins load AutomaticAds");
-            commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Enabled"]}");
-        });
-
-        AddCommand("ads_reload", "Reloads the AutomaticAds plugin configuration.", (player, commandInfo) =>
-        {
-
-            if (player == null || commandInfo == null) return;
-            MessageColorFormatter formatter = new MessageColorFormatter();
-            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-
-            var permissionValidator = new RequiresPermissions("@css/root");
-            if (!permissionValidator.CanExecuteCommand(player))
-            {
-                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
-                return;
-            }
-
-            try
-            {
-                Server.ExecuteCommand("css_plugins reload AutomaticAds");
-                commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Reloaded"]}");
-            }
-            catch (Exception ex)
-            {
-                commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["FailedToReload"]}: {ex.Message}");
-            }
-        });
+        
+        // AddCommand("ads_disable", "Disables the AutomaticAds plugin.", (player, commandInfo) =>
+        // {
+        //
+        //     if (player == null) return;
+        //     MessageColorFormatter formatter = new MessageColorFormatter();
+        //     string formattedPrefix = MessageColorFormatter.FormatMessage(Config.ChatPrefix);
+        //
+        //     var permissionValidator = new RequiresPermissions("@css/root");
+        //     if (!permissionValidator.CanExecuteCommand(player))
+        //     {
+        //         player.PrintToChat($" {formattedPrefix} {Localizer["NoPermissions"]}");
+        //         return;
+        //     }
+        //
+        //     Server.ExecuteCommand("css_plugins unload AutomaticAds");
+        //     commandInfo.ReplyToCommand($" {formattedPrefix} {Localizer["Disabled"]}");
+        // });
+        //
+        // AddCommand("ads_enable", "Enable the AutomaticAds plugin.", (player, commandInfo) =>
+        // {
+        //
+        //     if (player == null) return;
+        //     MessageColorFormatter formatter = new MessageColorFormatter();
+        //     string formattedPrefix = MessageColorFormatter.FormatMessage(Config.ChatPrefix);
+        //
+        //     var permissionValidator = new RequiresPermissions("@css/root");
+        //     if (!permissionValidator.CanExecuteCommand(player))
+        //     {
+        //         player.PrintToChat($" {formattedPrefix} {Localizer["NoPermissions"]}");
+        //         return;
+        //     }
+        //
+        //     Server.ExecuteCommand("css_plugins load AutomaticAds");
+        //     commandInfo.ReplyToCommand($" {formattedPrefix} {Localizer["Enabled"]}");
+        // });
+        //
+        // AddCommand("ads_reload", "Reloads the AutomaticAds plugin configuration.", (player, commandInfo) =>
+        // {
+        //
+        //     if (player == null) return;
+        //     MessageColorFormatter formatter = new MessageColorFormatter();
+        //     string formattedPrefix = MessageColorFormatter.FormatMessage(Config.ChatPrefix);
+        //
+        //     var permissionValidator = new RequiresPermissions("@css/root");
+        //     if (!permissionValidator.CanExecuteCommand(player))
+        //     {
+        //         player.PrintToChat($" {formattedPrefix} {Localizer["NoPermissions"]}");
+        //         return;
+        //     }
+        //
+        //     try
+        //     {
+        //         Server.ExecuteCommand("css_plugins reload AutomaticAds");
+        //         commandInfo.ReplyToCommand($" {formattedPrefix} {Localizer["Reloaded"]}");
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         commandInfo.ReplyToCommand($" {formattedPrefix} {Localizer["FailedToReload"]}: {ex.Message}");
+        //     }
+        // });
     }
 
     public required BaseConfigs Config { get; set; }
@@ -111,16 +103,18 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         ValidateConfig(config);
         Config = config;
 
-        foreach (var ad in Config.Ads)
+        SendMessages();
+        
+        if (Config.GlobalInterval > 0)
+            return;
+        
+        foreach (var ad in Config.Ads.Where(ad => !_lastAdTimes.ContainsKey(ad)))
         {
-            if (!lastAdTimes.ContainsKey(ad))
-            {
-                lastAdTimes[ad] = DateTime.MinValue;
-            }
+            _lastAdTimes[ad] = DateTime.MinValue;
         }
     }
 
-    private void ValidateConfig(BaseConfigs config)
+    private static void ValidateConfig(BaseConfigs config)
     {
         foreach (var ad in config.Ads)
         {
@@ -135,11 +129,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             }
         }
 
-        if (config.ChatPrefix.Length > 80)
-        {
-            config.ChatPrefix = "[AutomaticAds]";
-        }
-
         if (string.IsNullOrWhiteSpace(config.PlaySoundName))
         {
             config.PlaySoundName = "";
@@ -148,10 +137,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private void OnMapStart(string mapName)
     {
-        SendMessages();
+        _currentMap = Server.MapName;
+        
+        if (Config.GlobalInterval <= 0)
+            SendMessages();
     }
 
-    public void SendMessages()
+    private void SendMessages()
     {
         if (Config.SendAdsInOrder)
         {
@@ -159,18 +151,33 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
         else
         {
-            foreach (var ad in Config.Ads)
+            if (Config.GlobalInterval > 0)
             {
-                var timer = AddTimer(1.00f, () =>
+                AddTimer(Config.GlobalInterval, () =>
                 {
-                    if (CanSendAd(ad))
+                    
+                    int randomIndex;
+                    
+                    do
                     {
-                        SendAdToPlayers(ad);
-                        lastAdTimes[ad] = DateTime.Now;
-                    }
+                        randomIndex = Random.Next(Config.Ads.Count);
+                    } while (randomIndex == _currentAdIndex);
+                    
+                    _currentAdIndex = randomIndex;
+                    SendAdToPlayers(Config.Ads[randomIndex]);
                 }, TimerFlags.REPEAT);
-
-                timers.Add(timer);
+            }
+            else
+            {
+                foreach (var timer in Config.Ads.Select(ad => AddTimer(1.00f, () =>
+                         {
+                             if (!CanSendAd(ad)) return;
+                             SendAdToPlayers(ad);
+                             _lastAdTimes[ad] = DateTime.Now;
+                         }, TimerFlags.REPEAT)))
+                {
+                    _timers.Add(timer);
+                }
             }
         }
     }
@@ -179,31 +186,33 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     {
         if (Config.Ads.Count == 0) return;
 
-        var currentAd = Config.Ads[currentAdIndex];
+        var currentAd = Config.Ads[_currentAdIndex];
+        
         float interval = currentAd.Interval;
 
-        adTimer?.Kill();
-        adTimer = AddTimer(interval, () =>
+        _adTimer?.Kill();
+        _adTimer = AddTimer(interval, () =>
         {
             if (CanSendAd(currentAd))
             {
                 SendAdToPlayers(currentAd);
-                lastAdTimes[currentAd] = DateTime.Now;
+                _lastAdTimes[currentAd] = DateTime.Now;
             }
 
-            currentAdIndex = (currentAdIndex + 1) % Config.Ads.Count;
+            _currentAdIndex = (_currentAdIndex + 1) % Config.Ads.Count;
             ScheduleNextAd();
         });
     }
 
     private bool CanSendAd(BaseConfigs.AdConfig ad)
     {
-        if (!lastAdTimes.ContainsKey(ad))
+        if (!_lastAdTimes.TryGetValue(ad, out DateTime value))
         {
-            lastAdTimes[ad] = DateTime.MinValue;
+            value = DateTime.MinValue;
+            _lastAdTimes[ad] = value;
         }
 
-        if (lastAdTimes[ad] == DateTime.MinValue)
+        if (value == DateTime.MinValue)
         {
             return true;
         }
@@ -214,7 +223,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             return false;
         }
 
-        var secondsSinceLastMessage = (int)(DateTime.Now - lastAdTimes[ad]).TotalSeconds;
+        var secondsSinceLastMessage = (int)(DateTime.Now - value).TotalSeconds;
 
         bool canSend = secondsSinceLastMessage >= ad.Interval;
         return canSend;
@@ -224,73 +233,75 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     {
         var players = Utilities.GetPlayers();
 
-        if (players == null || players.Count == 0)
+        if (players.Count == 0)
         {
             return;
         }
 
-        MessageColorFormatter formatter = new MessageColorFormatter();
-        string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+        string formattedPrefix = MessageColorFormatter.FormatMessage(Config.ChatPrefix);
         // string formattedMessage = formatter.FormatMessage(ad.Message);
 
-        foreach (var player in players.Where(p => p != null && p.IsValid && p.Connected == PlayerConnectedState.PlayerConnected && !p.IsHLTV))
+        foreach (var player in players.Where(p => p is { IsValid: true, Connected: PlayerConnectedState.PlayerConnected, IsHLTV: false }))
         {
             bool canView = string.IsNullOrWhiteSpace(ad.ViewFlag) || ad.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, ad.ViewFlag);
             bool isExcluded = !string.IsNullOrWhiteSpace(ad.ExcludeFlag) && AdminManager.PlayerHasPermissions(player, ad.ExcludeFlag);
 
-            if (canView && !isExcluded)
+            if (!canView || isExcluded) continue;
+            
+            foreach (var message in MessageColorFormatter.SplitMessages(ad.Message))
             {
-                string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
+                string formattedMessage = MessageColorFormatter.FormatMessage(message, player.PlayerName);
+                player.PrintToChat($" {formattedPrefix} {formattedMessage}");
+            }
 
-                player.PrintToChat($"{formattedPrefix} {formattedMessage}");
-                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
-                {
-                    player.ExecuteClientCommand($"play {Config.PlaySoundName}");
-                }
+            if (!ad.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
+            {
+                player.ExecuteClientCommand($"play {Config.PlaySoundName}");
             }
         }
     }
 
     [GameEventHandler]
-    public HookResult OnPlayerFullConnect(EventPlayerConnectFull @event, GameEventInfo info)
+    public HookResult OnPlayerActivateEvent(EventPlayerActivate @event, GameEventInfo info)
     {
-        if (@event.Userid is not CCSPlayerController player || player.IsBot)
+        if (@event.Userid is not { } player || player.IsBot)
             return HookResult.Continue;
 
-        if (Config.EnableWelcomeMessage && player.IsValid && !player.IsBot)
+        if (!Config.EnableWelcomeMessage || player is not { IsValid: true, IsBot: false }) return HookResult.Continue;
+        foreach (var welcome in Config.Welcome)
         {
-            foreach (var welcome in Config.Welcome)
+            if (string.IsNullOrWhiteSpace(welcome.ViewFlag))
             {
-                if (string.IsNullOrWhiteSpace(welcome.ViewFlag))
-                {
-                    welcome.ViewFlag = "all";
-                }
+                welcome.ViewFlag = "all";
+            }
 
-                if (string.IsNullOrWhiteSpace(welcome.ExcludeFlag))
-                {
-                    welcome.ExcludeFlag = "";
-                }
+            if (string.IsNullOrWhiteSpace(welcome.ExcludeFlag))
+            {
+                welcome.ExcludeFlag = "";
+            }
 
-                bool canView = string.IsNullOrWhiteSpace(welcome.ViewFlag) || welcome.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, welcome.ViewFlag);
-                bool isExcluded = !string.IsNullOrWhiteSpace(welcome.ExcludeFlag) && AdminManager.PlayerHasPermissions(player, welcome.ExcludeFlag);
+            bool canView = string.IsNullOrWhiteSpace(welcome.ViewFlag) || welcome.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, welcome.ViewFlag);
+            bool isExcluded = !string.IsNullOrWhiteSpace(welcome.ExcludeFlag) && AdminManager.PlayerHasPermissions(player, welcome.ExcludeFlag);
 
-                if (canView && !isExcluded)
+            if (canView && !isExcluded)
+            {
+                AddTimer(3.0f, () =>
                 {
-                    AddTimer(3.0f, () =>
+                    string prefix = MessageColorFormatter.FormatMessage(Config.ChatPrefix);
+
+                    foreach (var message in MessageColorFormatter.SplitMessages(welcome.WelcomeMessage))
                     {
-                        MessageColorFormatter formatter = new MessageColorFormatter();
-                        string prefix = formatter.FormatMessage(Config.ChatPrefix);
-                        // string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage);
-                        string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage, player.PlayerName);
+                        var formattedMessage = MessageColorFormatter.FormatMessage(message, player.PlayerName);
+                        player.PrintToChat($" {prefix} {formattedMessage}");
+                    }
+                    
+                    // string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage);
 
-                        player.PrintToChat($"{prefix} {welcomeMessage}");
-
-                        if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
-                        {
-                            player.ExecuteClientCommand($"play {Config.PlaySoundName}");
-                        }
-                    });
-                }
+                    if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
+                    {
+                        player.ExecuteClientCommand($"play {Config.PlaySoundName}");
+                    }
+                });
             }
         }
 
@@ -299,11 +310,14 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     public override void Unload(bool hotReload)
     {
-        adTimer?.Kill();
-        foreach (var timer in timers)
+        if (Config.GlobalInterval > 0)
+            return;
+        
+        _adTimer?.Kill();
+        foreach (var timer in _timers)
         {
             timer.Kill();
         }
-        timers.Clear();
+        _timers.Clear();
     }
 }

@@ -13,6 +13,9 @@ public class BaseConfigs : BasePluginConfig
 
     [JsonPropertyName("sendAdsInOrder")]
     public bool SendAdsInOrder { get; set; } = true;
+    
+    [JsonPropertyName("GlobalInterval")]
+    public int GlobalInterval { get; set; } = 160;
 
     [JsonPropertyName("UseWelcomeMessage")]
     public bool EnableWelcomeMessage { get; set; } = true;
